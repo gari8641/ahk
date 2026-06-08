@@ -20,9 +20,24 @@ $^!h::{
 ^!l::Run "C:\portable_soft\launcher\launcher.bat"
 ^!m::Run "C:\job\LM_.xmind"
 ^!n::Run ('"C:\Program Files\Google\Chrome\Application\chrome_proxy.exe" --profile-directory=Default --app-id=fcpohfnckgkeokplbfekfjgngnegfnhk')
+^!s::
+{
+    Run '"C:\Program Files\Google\Chrome\Application\chrome.exe" --app="https://docs.google.com/document/d/1OdAN4fTm8zif2cW4IEoIMumgxq9doL5yosnrldjSalA/edit?tab=t.0"'
+}
 ^!t::Run "C:\Users\bpc_m\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\クロック - ショートカット.lnk"
 ^!r::Run "C:\Users\bpc_m\OneDrive\Documents\reuse.md"
 ^!i::Run "C:\job\tmp\isms\2026src"
+^!v::{
+    if WinExist("ahk_exe gvim.exe") {
+        WinActivate
+    } else {
+        Run '"C:\Program Files (x86)\Vim\vim82\gvim.exe" --servername GVIM'
+        WinWait "ahk_exe gvim.exe", , 5
+        if WinExist("ahk_exe gvim.exe") {
+            WinActivate
+        }
+    }
+}
 ^!y::Run ('"C:\Program Files (x86)\Vim\vim82\gvim.exe" "C:\job\bitpark\yotei\yotei.md"')
 ;;;;;^!v::
 ; --- CapsLock layer ---
@@ -235,9 +250,7 @@ d::Send "!{F4}"
 }
 ^+a::Send "^a"
 ^e::Send "{End}"
-;^j::Send "+{Enter}"     ; 改行
 ^j::Send "{Enter}"
-;Enter::Send "+{Enter}"
 ^k::{
     Send "+{End}"
     Send "{Delete}"
@@ -247,12 +260,20 @@ d::Send "!{F4}"
     Loop 7
         Send "{Left}"
     Send " "
+    Send " "
+    Send "{Backspace}"
     Send "{Backspace}"
     Send "{Enter}"
 }
 
 ::;e:: {
-    Send "作業終了します"
+    Send ":endarrow:作業終了します"
+    Loop 7
+        Send "{Left}"
+    Send " "
+    Send " "
+    Send "{Backspace}"
+    Send "{Backspace}"
     Send "{Enter}"
 }
 #HotIf
