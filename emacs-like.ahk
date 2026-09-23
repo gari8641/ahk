@@ -1,6 +1,62 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 
+; =========================
+; 左Alt と 左Windows を入れ替える
+; Magic Keyboard用など
+; true  = 入れ替える
+; false = 入れ替えない
+; =========================
+swapLeftAltWin := true
+;swapLeftAltWin := false
+
+#HotIf swapLeftAltWin
+
+LAlt::LWin
+LWin::LAlt
+
+#HotIf
+
+
+
+
+; クリップボードの中身をコードブロックに入れる
+; クリップボードが空なら何もしない
+::;c::
+{
+    clip := A_Clipboard
+
+    if (clip = "") {
+        return
+    }
+
+    backticks := Chr(96) Chr(96) Chr(96)
+
+    SendText backticks
+    Send "{Enter}"
+    SendText clip
+    Send "{Enter}"
+    SendText backticks
+}
+
+
+
+; GyazoのURLをMD用用にする
+;   クリップボードが空なら何もしない
+::;g::
+{
+    clip := A_Clipboard
+
+    if (clip = "") {
+        return
+    }
+
+    SendText "![ss]("
+    SendText clip
+    SendText ".png)"
+}
+
+
 ; 前提: PowerToys Keyboard Manager で「Caps Lock → F14」にリマップ済み
 ; AHK側では CapsLock を一切見ず、F14 だけを扱う。
 
@@ -88,24 +144,72 @@ capsWasUsedWithShift := false
     RunWait 'taskkill /F /IM Teams.exe', , "Hide"
     RunWait 'taskkill /F /IM TeamsWebView.exe', , "Hide"
 }
+
+^!g::Run "https://docs.google.com/spreadsheets/d/1Cd48kVgP-xjf-o_OmtMkmpcTnkPNqXpGgmyOav-AO2E/edit#gid=204609307"
 $^!h::{
     Run '"C:\Program Files (x86)\Vim\vim82\gvim.exe" "C:\Windows\System32\drivers\etc\hosts"'
 }
-^!g::Run "https://docs.google.com/spreadsheets/d/1Cd48kVgP-xjf-o_OmtMkmpcTnkPNqXpGgmyOav-AO2E/edit#gid=204609307"
+^!i::Run "C:\job\isms"
 ^!j::Run "C:\job"
 ^!l::{
   RunWait "C:\portable_soft\call302\CloseALL.exe"
   Run "C:\portable_soft\launcher\launcher.bat"
 }
-^!m::Run "C:\job\LM_.xmind"
+;;;^!m::Run "C:\job\LM_.xmind"
+^!m::
+{
+    baseDir := "C:\job\mm\"
+    suffix := "_LM_.xmind"
+
+    today := A_Now
+    todayName := FormatTime(today, "yy-MM-dd")
+    todayPath := baseDir todayName suffix
+
+    ; 今日のファイルが既にあるなら、そのまま開く
+    if FileExist(todayPath) {
+        Run todayPath
+        return
+    }
+
+    ; 昨日から10日前まで遡って探す
+    sourcePath := ""
+
+    Loop 10 {
+        pastDate := DateAdd(today, -A_Index, "Days")
+        pastName := FormatTime(pastDate, "yy-MM-dd")
+        candidatePath := baseDir pastName suffix
+
+        if FileExist(candidatePath) {
+            sourcePath := candidatePath
+            break
+        }
+    }
+
+    ; コピー元が見つからなければ終了
+    if (sourcePath = "") {
+        MsgBox "コピー元ファイルが見つからない。`n10日前まで探したが全滅。`n`n作成対象:`n" todayPath
+        return
+    }
+
+    ; 最新の過去ファイルを今日の日付でコピー
+    try {
+        FileCopy sourcePath, todayPath, false
+    } catch as e {
+        MsgBox "ファイルコピーに失敗した。`n`nコピー元:`n" sourcePath "`n`nコピー先:`n" todayPath "`n`nエラー:`n" e.Message
+        return
+    }
+
+    ; 今日のファイルを開く
+    Run todayPath
+}
 ^!n::Run ('"C:\Program Files\Google\Chrome\Application\chrome_proxy.exe" --profile-directory=Default --app-id=fcpohfnckgkeokplbfekfjgngnegfnhk')
+^!r::Run "C:\Users\bpc_m\OneDrive\Documents\reuse.md"
 ^!s::
 {
     Run '"C:\Program Files\Google\Chrome\Application\chrome.exe" --app="https://docs.google.com/document/d/1OdAN4fTm8zif2cW4IEoIMumgxq9doL5yosnrldjSalA/edit?tab=t.0"'
 }
 ^!t::Run "C:\Users\bpc_m\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\クロック - ショートカット.lnk"
-^!r::Run "C:\Users\bpc_m\OneDrive\Documents\reuse.md"
-^!i::Run "C:\job\isms"
+
 ^!v::{
     if WinExist("ahk_exe gvim.exe") {
         WinActivate
@@ -117,7 +221,10 @@ $^!h::{
         }
     }
 }
+
+
 ^!y::Run ('"C:\Program Files (x86)\Vim\vim82\gvim.exe" "C:\job\bitpark\yotei\yotei.md"')
+
 ;;;;;^!v::
 ; --- F14 layer ---
 F14 & c::
@@ -135,7 +242,17 @@ F14 & c::
 ;    RunWait 'taskkill /F /IM Teams.exe', , "Hide"
 ;    RunWait 'taskkill /F /IM TeamsWebView.exe', , "Hide"
 ;}
-F14 & r::Run('"C:\Program Files (x86)\Vim\vim82\gvim.exe" "C:\Users\bpc_m\OneDrive\Documents\reuse.md"')
+F14 & r::
+{
+    targetTitle := "reuse.md"
+    target := targetTitle " ahk_exe gvim.exe"
+
+    if WinExist(target) {
+        WinActivate target
+    } else {
+        Run '"C:\Program Files (x86)\Vim\vim82\gvim.exe" "C:\Users\bpc_m\OneDrive\Documents\reuse.md"'
+    }
+}
 F14 & v::
 {
     if WinExist("ahk_exe gvim.exe") {
@@ -392,32 +509,32 @@ F14 & t::Run "C:\job\tmp"
 ;; =========================
 ;; ファイル名を指定して実行
 ;; =========================
-#HotIf WinActive("ahk_class #32770")
-^h::Send "{Backspace}"
-^d::Send "{Delete}"
-^b::Send "{Left}"
-^f::Send "{Right}"
-^n::Send "{Down}"
-^p::Send "{Up}"
-^a::{
-    static threshold := 250  ; 2連打判定(ms)
-    if (A_PriorHotkey = "^a" && A_TimeSincePriorHotkey < threshold) {
-        Send "^a"            ; 2回目：全選択
-    } else {
-        Send "{Home}"        ; 1回目：Home（現状維持）
-    }
-}
-^+a::Send "^a"           ; 全選択
-^e::Send "{End}"
-^j::Send "{Enter}"
-
-^k::
-{
-    Send "+{End}"
-    Send "{Delete}"
-}
-return
-#HotIf
+;;#HotIf WinActive("ahk_class #32770")
+;;^h::Send "{Backspace}"
+;;^d::Send "{Delete}"
+;;^b::Send "{Left}"
+;;^f::Send "{Right}"
+;;^n::Send "{Down}"
+;;^p::Send "{Up}"
+;;^a::{
+;;    static threshold := 250  ; 2連打判定(ms)
+;;    if (A_PriorHotkey = "^a" && A_TimeSincePriorHotkey < threshold) {
+;;        Send "^a"            ; 2回目：全選択
+;;    } else {
+;;        Send "{Home}"        ; 1回目：Home（現状維持）
+;;    }
+;;}
+;;^+a::Send "^a"           ; 全選択
+;;^e::Send "{End}"
+;;^j::Send "{Enter}"
+;;
+;;^k::
+;;{
+;;    Send "+{End}"
+;;    Send "{Delete}"
+;;}
+;;return
+;;#HotIf
 
 
 
@@ -496,6 +613,8 @@ q::Send "!{F4}"
 x::Send "!{F4}"
 d::Send "!{F4}"
 #HotIf
+
+
 
 ; =========================
 ; Teams（Ctrl+J 送信）
